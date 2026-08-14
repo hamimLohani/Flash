@@ -7,10 +7,16 @@ one per board target, plus a helper to check which serial port a board is on.
 
 | Script               | Board                          | FQBN                          |
 |----------------------|---------------------------------|--------------------------------|
+| `auto_upload.sh`     | Board picked via argument        | Selectable: `esp32`, `esp32s3`, `esp8266` |
 | `upload_esp32.sh`    | Plain ESP32 dev board           | `esp32:esp32:esp32`            |
 | `upload_esp32s3.sh`  | ESP32-S3                        | `esp32:esp32:esp32s3`          |
 | `upload_esp8266.sh`  | ESP8266 NodeMCU (v2)            | `esp8266:esp8266:nodemcuv2`    |
 | `check_ports.sh`     | —                                | Lists connected serial devices |
+
+`auto_upload.sh` is the original all-in-one script — pass the board as an
+argument (defaults to `esp32s3` if omitted). The `upload_*.sh` scripts are
+single-board versions of the same logic, split out so you don't need to
+remember the argument name per board.
 
 ## Requirements
 
@@ -150,6 +156,11 @@ Then, from that folder:
 
 # ESP8266 NodeMCU
 /path/to/upload_esp8266.sh
+
+# Or, using the single combined script with a board argument:
+/path/to/auto_upload.sh esp32      # plain ESP32
+/path/to/auto_upload.sh esp32s3    # ESP32-S3 (default if no argument given)
+/path/to/auto_upload.sh esp8266    # ESP8266 NodeMCU
 ```
 
 Each script will:
@@ -167,6 +178,7 @@ Default is `921600`. Override with the `BAUD` env var if uploads are unreliable
 
 ```zsh
 BAUD=115200 /path/to/upload_esp8266.sh
+BAUD=115200 /path/to/auto_upload.sh esp8266
 ```
 
 ### Checking ports first
