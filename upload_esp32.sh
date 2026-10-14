@@ -5,29 +5,53 @@
 # macOS + Arduino CLI
 #
 # Usage:
-#   ./upload_esp32.sh              -> default baud 921600
-#   BAUD=460800 ./upload_esp32.sh  -> override upload baud rate
+#   ./upload_esp32.sh                      -> compiles current directory & uploads
+#   ./upload_esp32.sh /path/to/sketch      -> compiles target sketch & uploads
+#   BAUD=460800 ./upload_esp32.sh          -> override upload baud rate
+#   PORT=/dev/cu.usbserial10 ./upload_esp32.sh -> override serial port
 # -----------------------------
 
 BOARD="esp32:esp32:esp32"
 BAUD="${BAUD:-921600}"
-SKETCH_DIR="$PWD"
 
-# --- Check arduino-cli ---
-if ! command -v arduino-cli >/dev/null 2>&1; then
-  echo "❌ arduino-cli is not installed."
+# --- Resolve sketch directory ---
+TARGET="${1:-$PWD}"
+if [[ -f "$TARGET" && "$TARGET" == *.ino ]]; then
+  SKETCH_DIR="$(cd "$(dirname "$TARGET")" && pwd)"
+elif [[ -d "$TARGET" ]]; then
+  SKETCH_DIR="$(cd "$TARGET" && pwd)"
+else
+  echo "❌ Invalid sketch path: $TARGET"
   exit 1
 fi
 
-# --- Validate sketch exists in current dir ---
-if ! ls "$SKETCH_DIR"/*.ino >/dev/null 2>&1; then
+# --- Check arduino-cli ---
+if ! command -v arduino-cli >/dev/null 2>&1; then
+  echo "❌ arduino-cli is not installed or not in PATH."
+  echo "   Install via Homebrew: brew install arduino-cli"
+  exit 1
+fi
+
+# --- Validate .ino exists in sketch directory ---
+typeset -a inos
+inos=("$SKETCH_DIR"/*.ino(N))
+if [[ ${#inos[@]} -eq 0 ]]; then
   echo "❌ No .ino file found in $SKETCH_DIR"
   exit 1
 fi
 
-# --- Find the first USB serial device ---
-local ports=(/dev/cu.usbserial*(N) /dev/cu.usbmodem*(N) /dev/cu.SLAB_USBtoUART*(N))
-local PORT="${ports[1]}"
+# --- Find USB serial device ---
+typeset -a ports
+ports=(
+  /dev/cu.usbmodem*(N)
+  /dev/cu.usbserial*(N)
+  /dev/cu.wchusbserial*(N)
+  /dev/cu.wchusb*(N)
+  /dev/cu.SLAB_USBtoUART*(N)
+  /dev/cu.uart*(N)
+)
+
+PORT="${PORT:-${ports[1]}}"
 
 if [[ -z "$PORT" ]]; then
   echo "❌ No USB serial device found."
@@ -39,15 +63,23 @@ fi
 
 echo "🔧 Board  : ESP32 ($BOARD)"
 echo "📡 Port   : $PORT"
-echo "📁 Sketch : $SKETCH_DIR"
+echo "📁 Sketch : $SKETCH_DIR (${inos[1]:t})"
 echo "⚡ Baud   : $BAUD"
+if [[ -n "$BOARD_OPTIONS" ]]; then
+  echo "⚙️  Options: $BOARD_OPTIONS"
+fi
 echo
 
 # --- Compile ---
 echo "🔨 Compiling..."
-if ! arduino-cli compile \
-  --fqbn "$BOARD" \
-  "$SKETCH_DIR"; then
+typeset -a compile_args
+compile_args=(compile --fqbn "$BOARD")
+if [[ -n "$BOARD_OPTIONS" ]]; then
+  compile_args+=(--board-options "$BOARD_OPTIONS")
+fi
+compile_args+=("$SKETCH_DIR")
+
+if ! arduino-cli "${compile_args[@]}"; then
   echo
   echo "❌ Compilation failed."
   exit 1
@@ -64,6 +96,7 @@ if ! arduino-cli upload \
   "$SKETCH_DIR"; then
   echo
   echo "❌ Upload failed."
+  echo "💡 Tip: If uploading hangs, press and hold the BOOT button on the board until uploading starts."
   exit 1
 fi
 
