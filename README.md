@@ -13,8 +13,28 @@ one per board target, plus helpers to check serial ports and open serial monitor
 | `upload_esp8266.sh`  | ESP8266 NodeMCU (v2)           | `esp8266:esp8266:nodemcuv2`    |
 | `check_ports.sh`     | Port detection helper          | Lists connected serial devices and highlights the active port |
 | `monitor.sh`         | Serial monitor helper          | Opens serial monitor on auto-detected or specified port |
+| `install.sh`         | CLI Installer                  | Copies all commands to `~/.local/bin` for system-wide use |
 
 `auto_upload.sh` is the all-in-one script — pass the board as an argument (defaults to `esp32s3` if omitted). The `upload_*.sh` scripts are single-board versions of the same logic, split out for quick invocation without arguments.
+
+## Global CLI Installation
+
+To run these scripts directly from anywhere as shell commands (e.g., `upload_esp32s3`, `flash`, `check_ports`):
+
+```zsh
+./install.sh
+```
+
+This installs the commands into `~/.local/bin` (and you can also use `~/bin`).
+You can then run commands directly from any terminal window without typing `./` or paths:
+
+- `upload_esp32s3 [sketch_path]`
+- `upload_esp32 [sketch_path]`
+- `upload_esp8266 [sketch_path]`
+- `auto_upload [board] [sketch_path]`
+- `flash [board] [sketch_path]`
+- `check_ports`
+- `monitor [baud] [port]`
 
 ## Requirements
 

@@ -30,6 +30,25 @@ BOARD_FQBN=(
   esp8266   "esp8266:esp8266:nodemcuv2"
 )
 
+# --- Help flag ---
+if [[ "$1" == "-h" || "$1" == "--help" || "$1" == "help" ]]; then
+  echo "Usage: $0 [board] [sketch_path]"
+  echo
+  echo "Available boards: ${(k)BOARD_FQBN}"
+  echo
+  echo "Examples:"
+  echo "  $0                         # Default (esp32s3) in current directory"
+  echo "  $0 esp32                   # ESP32 in current directory"
+  echo "  $0 esp32s3 /path/to/sketch # ESP32-S3 with sketch path"
+  echo "  $0 /path/to/sketch         # Default board with sketch path"
+  echo
+  echo "Environment variables:"
+  echo "  BAUD=115200 $0             # Override upload baud rate"
+  echo "  PORT=/dev/cu... $0         # Override serial port"
+  echo "  CDC=1 $0 esp32s3           # Enable USB CDC on boot"
+  exit 0
+fi
+
 # --- Parse arguments ---
 # Check if $1 is a board key or a directory/file path
 if [[ -n "$1" && -n "${BOARD_FQBN[$1]}" ]]; then
